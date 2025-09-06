@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Searchable Veterinary Product List</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #374151;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 90%;
+            margin: auto;
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 80vh;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .vet-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 0.5rem; /* Add vertical spacing between rows */
+        }
+
+        .vet-table th, .vet-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            white-space: nowrap; /* Prevent line breaks */
+            overflow: hidden;
+            text-overflow: ellipsis; /* Add ellipsis for overflow text */
+        }
+        
+        /* Set column widths to be more similar */
+        .vet-table th, .vet-table td {
+            width: calc(100% / 10); /* 10 columns after removing the first one */
+        }
+        
+        /* Make some columns with long text more compact */
+        .vet-table .long-text {
+            max-width: 150px;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .vet-table th {
+            background-color: #1e3a8a;
+            color: #ffffff;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .vet-table tbody tr {
+            background-color: #f9fafb;
+            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        
+        .vet-table tbody tr:hover {
+            background-color: #e5e7eb;
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+            background-color: #f9fafb;
+            transition: border-color 0.2s;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .table-row-compact {
+            line-height: 1.25;
+        }
+
+        .table-row-compact td {
+            vertical-align: top;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+<div class="container">
+    <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Veterinary Product List</h1>
+    <p class="text-center text-gray-600 mb-8">Search and filter the list of registered veterinary products. Use the dropdown menus to filter by specific routes and package types.</p>
+
+    <div class="controls">
+        <!-- Searchable fields for each column -->
+        <input type="text" id="filter-RegistrationYear" class="filter-input" placeholder="Filter by Registration Year">
+        <input type="text" id="filter-Ingredient" class="filter-input" placeholder="Filter by Ingredient">
+        <input type="text" id="filter-TradeName" class="filter-input" placeholder="Filter by Trade Name">
+        <input type="text" id="filter-Strength" class="filter-input" placeholder="Filter by Strength">
+        <input type="text" id="filter-StrengthUnitId" class="filter-input" placeholder="Filter by Unit">
+        <input type="text" id="filter-PharmaceuticalFormId" class="filter-input" placeholder="Filter by Form">
+        
+        <!-- Dropdown filters -->
+        <select id="filter-AdministrationRouteId" class="filter-input">
+            <option value="">Filter by Administration Route</option>
+        </select>
+        <select id="filter-PackageTypeId" class="filter-input">
+            <option value="">Filter by Package Type</option>
+        </select>
+        
+        <input type="text" id="filter-ManufacturerName" class="filter-input" placeholder="Filter by Manufacturer Name">
+        <input type="text" id="filter-AgentName" class="filter-input" placeholder="Filter by Agent Name">
+    </div>
+
+    <div class="table-container rounded-lg shadow-inner">
+        <table class="vet-table">
+            <thead>
+                <tr>
+                    <th class="py-3 px-4 rounded-tl-lg">Registration Year</th>
+                    <th class="py-3 px-4">Ingredient</th>
+                    <th class="py-3 px-4">Trade Name</th>
+                    <th class="py-3 px-4">Strength</th>
+                    <th class="py-3 px-4">Unit</th>
+                    <th class="py-3 px-4">Pharmaceutical Form</th>
+                    <th class="py-3 px-4">Administration Route</th>
+                    <th class="py-3 px-4">Package Type</th>
+                    <th class="py-3 px-4">Manufacturer Name</th>
+                    <th class="py-3 px-4 rounded-tr-lg">Agent Name</th>
+                </tr>
+            </thead>
+            <tbody id="data-table-body">
+                <!-- Data will be inserted here by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const data = [
+            { "RegistrationNo": "0701256522", "RegistrationYear": "2025", "Ingredient": "Tulathromycin", "TradeName": "REXXOLIDE", "Strength": "100", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Intramuscular use", "PackageTypeId": "Vial", "ManufacturerName": ".Eurovet Animal Health B.V", "AgentName": "Gozl trading est." },
+            { "RegistrationNo": "0302256790", "RegistrationYear": "2025", "Ingredient": "Maropitant", "TradeName": "Prevomax", "Strength": "10", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Parenteral use", "PackageTypeId": "Vial", "ManufacturerName": ".Eurovet Animal Health B.V", "AgentName": "Gozl trading est." },
+            { "RegistrationNo": "0402256805", "RegistrationYear": "2025", "Ingredient": "Prednisolone Acetate", "TradeName": "VETACORTYL", "Strength": "100", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Intramuscular and intravenous use", "PackageTypeId": "Bottle", "ManufacturerName": "Interchemie Werken ‘De Adelaar’ Eesti AS", "AgentName": "Mohamed Ahmed Binzahaba Al-Ghamdi Store" },
+            { "RegistrationNo": "0702256814", "RegistrationYear": "2025", "Ingredient": "Monepantel", "TradeName": "ZOLVIX", "Strength": "25", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": "Novartis Animal Health S.A.", "AgentName": "Novartis Farmaceutica S.A." },
+            { "RegistrationNo": "0802256846", "RegistrationYear": "2025", "Ingredient": "Buprenorphine hydrochloride", "TradeName": "Vetergesic Multidose", "Strength": "0.3", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Intravenous and intramuscular use", "PackageTypeId": "Bottle", "ManufacturerName": "Alstoe Animal Health Ltd.", "AgentName": "Ghassan O. Jallad Trading Est." },
+            { "RegistrationNo": "1102256854", "RegistrationYear": "2025", "Ingredient": "Clindamycin hydrochloride", "TradeName": "CLINDAVET 25 mg capsules for dogs and cats", "Strength": "25", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Capsule", "AdministrationRouteId": "Oral use", "PackageTypeId": "Blister", "ManufacturerName": "Inovet", "AgentName": "Al-Mashaal Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "1202256855", "RegistrationYear": "2025", "Ingredient": "Clindamycin hydrochloride", "TradeName": "CLINDAVET 75 mg capsules for dogs and cats", "Strength": "75", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Capsule", "AdministrationRouteId": "Oral use", "PackageTypeId": "Blister", "ManufacturerName": "Inovet", "AgentName": "Al-Mashaal Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "1302256856", "RegistrationYear": "2025", "Ingredient": "Clindamycin hydrochloride", "TradeName": "CLINDAVET 150 mg capsules for dogs and cats", "Strength": "150", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Capsule", "AdministrationRouteId": "Oral use", "PackageTypeId": "Blister", "ManufacturerName": "Inovet", "AgentName": "Al-Mashaal Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "1402256857", "RegistrationYear": "2025", "Ingredient": "Toltrazuril", "TradeName": "TOLTRAZURIL 5% Oral suspension", "Strength": "50", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral suspension", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": ".Jingdong(Beijing) Technology Co. Ltd", "AgentName": "Al-Mashaal Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "1502256858", "RegistrationYear": "2025", "Ingredient": "Toltrazuril", "TradeName": "TOLTRAZURIL 5% Oral suspension", "Strength": "50", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral suspension", "AdministrationRouteId": "Oral use", "PackageTypeId": "Gallon", "ManufacturerName": ".Jingdong(Beijing) Technology Co. Ltd", "AgentName": "Al-Mashaal Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "1602256860", "RegistrationYear": "2025", "Ingredient": "Tilmicosin", "TradeName": "Tilmet", "Strength": "250", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": "Al-Awael Veterinary Pharmaceutics Co.", "AgentName": "Al-Mashaal Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "1702256861", "RegistrationYear": "2025", "Ingredient": "Tilmicosin", "TradeName": "Tilmet", "Strength": "250", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Jar", "ManufacturerName": "Al-Awael Veterinary Pharmaceutics Co.", "AgentName": "Al-Mashaal Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "1802256862", "RegistrationYear": "2025", "Ingredient": "Tilmicosin", "TradeName": "Tilmet", "Strength": "250", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Gallon", "ManufacturerName": "Al-Awael Veterinary Pharmaceutics Co.", "AgentName": "Al-Mashaal Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "1902256863", "RegistrationYear": "2025", "Ingredient": "Vitamin A, Vitamin B1, Vitamin D3, Vitamin E", "TradeName": "Bio-Biolight", "Strength": "1.8-0.038", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": "Zootek Company", "AgentName": "Rayan Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "2002256864", "RegistrationYear": "2025", "Ingredient": "Vitamin A, Vitamin B1, Vitamin D3, Vitamin E", "TradeName": "Bio-Biolight", "Strength": "1.8-0.038", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Jar", "ManufacturerName": "Zootek Company", "AgentName": "Rayan Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "2102256865", "RegistrationYear": "2025", "Ingredient": "Vitamin A, Vitamin B1, Vitamin D3, Vitamin E", "TradeName": "Bio-Biolight", "Strength": "1.8-0.038", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Gallon", "ManufacturerName": "Zootek Company", "AgentName": "Rayan Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "2202256866", "RegistrationYear": "2025", "Ingredient": "Vitamin C", "TradeName": "ASCOR 100", "Strength": "100", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Jar", "ManufacturerName": ".Jordan Bio-Industries Center (JOVIC)", "AgentName": "Tariq Al-Fahd Pharmacy Est." },
+            { "RegistrationNo": "2302256873", "RegistrationYear": "2025", "Ingredient": "Tilmicosin", "TradeName": "Tilmicosin-500", "Strength": "500", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": ".Interchemie Werken 'De Adelaar' Eesti AS", "AgentName": "Mohamed Ahmed Binzahaba Al-Ghamdi Store" },
+            { "RegistrationNo": "2402256875", "RegistrationYear": "2025", "Ingredient": "Tilmicosin", "TradeName": "Tilmicosin-500", "Strength": "500", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Gallon", "ManufacturerName": ".Interchemie Werken 'De Adelaar' Eesti AS", "AgentName": "Mohamed Ahmed Binzahaba Al-Ghamdi Store" },
+            { "RegistrationNo": "2502256876", "RegistrationYear": "2025", "Ingredient": "Toltrazuril", "TradeName": "Toltrazuril 2.5%", "Strength": "25", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": ".Interchemie Werken 'De Adelaar' Eesti AS", "AgentName": "Mohamed Ahmed Binzahaba Al-Ghamdi Store" },
+            { "RegistrationNo": "2602256877", "RegistrationYear": "2025", "Ingredient": "Toltrazuril", "TradeName": "Toltrazuril 2.5%", "Strength": "25", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Gallon", "ManufacturerName": ".Interchemie Werken 'De Adelaar' Eesti AS", "AgentName": "Mohamed Ahmed Binzahaba Al-Ghamdi Store" },
+            { "RegistrationNo": "2702256878", "RegistrationYear": "2025", "Ingredient": "Amprolium hydrochloride", "TradeName": "AMPROLIUM-20 S", "Strength": "200", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Jar", "ManufacturerName": "Laboratories Biove", "AgentName": "Fursan Al-Ahram Trading Est." },
+            { "RegistrationNo": "2802256879", "RegistrationYear": "2025", "Ingredient": "Amprolium hydrochloride", "TradeName": "AMPROLIUM-20 S", "Strength": "200", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Sachet", "ManufacturerName": "Laboratories Biove", "AgentName": "Fursan Al-Ahram Trading Est." },
+            { "RegistrationNo": "2902256900", "RegistrationYear": "2025", "Ingredient": "Doxycycline hyclate", "TradeName": "Doxymast", "Strength": "50", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Jar", "ManufacturerName": "Mastor Veteriner Ilac Sanayi ve Ticaret A.S", "AgentName": "Al-Mashaal Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "3002256901", "RegistrationYear": "2025", "Ingredient": "Doxycycline hyclate", "TradeName": "Doxymast", "Strength": "50", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Sachet", "ManufacturerName": "Mastor Veteriner Ilac Sanayi ve Ticaret A.S", "AgentName": "Al-Mashaal Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "3102256902", "RegistrationYear": "2025", "Ingredient": "Amprolium hydrochloride, sulfaquinoxaline sodium", "TradeName": "Sulfacox", "Strength": "150-150", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Jar", "ManufacturerName": ".Jordan Bio-Industries Center (JOVIC)", "AgentName": "Tariq Al-Fahd Pharmacy Est." },
+            { "RegistrationNo": "3202256903", "RegistrationYear": "2025", "Ingredient": "Amprolium hydrochloride, sulfaquinoxaline sodium", "TradeName": "Sulfacox", "Strength": "150-150", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Sachet", "ManufacturerName": ".Jordan Bio-Industries Center (JOVIC)", "AgentName": "Tariq Al-Fahd Pharmacy Est." },
+            { "RegistrationNo": "3302256904", "RegistrationYear": "2025", "Ingredient": "Amprolium hydrochloride, sulfaquinoxaline sodium", "TradeName": "Sulfacox", "Strength": "150-150", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bag", "ManufacturerName": ".Jordan Bio-Industries Center (JOVIC)", "AgentName": "Tariq Al-Fahd Pharmacy Est." },
+            { "RegistrationNo": "3402256905", "RegistrationYear": "2025", "Ingredient": "Amprolium hydrochloride, sulfaquinoxaline sodium", "TradeName": "Sulfacox", "Strength": "150-150", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Gallon", "ManufacturerName": ".Jordan Bio-Industries Center (JOVIC)", "AgentName": "Tariq Al-Fahd Pharmacy Est." },
+            { "RegistrationNo": "3502256906", "RegistrationYear": "2025", "Ingredient": "Amprolium hydrochloride, sulfaquinoxaline sodium", "TradeName": "Sulfacox", "Strength": "150-150", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": ".Jordan Bio-Industries Center (JOVIC)", "AgentName": "Tariq Al-Fahd Pharmacy Est." },
+            { "RegistrationNo": "3602256910", "RegistrationYear": "2025", "Ingredient": "Amoxicillin trihydrate", "TradeName": "Amoximast", "Strength": "50", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Premix for medicated feeding stuff", "AdministrationRouteId": "Oral use", "PackageTypeId": "Jar", "ManufacturerName": "Mastor Veteriner Ilac Sanayi ve Ticaret A.S", "AgentName": "Al-Mashaal Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "3702256911", "RegistrationYear": "2025", "Ingredient": "Amoxicillin trihydrate", "TradeName": "Amoximast", "Strength": "50", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Premix for medicated feeding stuff", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bag", "ManufacturerName": "Mastor Veteriner Ilac Sanayi ve Ticaret A.S", "AgentName": "Al-Mashaal Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "3802256912", "RegistrationYear": "2025", "Ingredient": "Amoxicillin trihydrate", "TradeName": "Amoximast", "Strength": "50", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Premix for medicated feeding stuff", "AdministrationRouteId": "Oral use", "PackageTypeId": "Gallon", "ManufacturerName": "Mastor Veteriner Ilac Sanayi ve Ticaret A.S", "AgentName": "Al-Mashaal Est. For Vet. Med. & Ag." },
+            { "RegistrationNo": "3902256913", "RegistrationYear": "2025", "Ingredient": "Emodepside, Praziquantel", "TradeName": "Profender Spot-on for cats", "Strength": "21.4", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Spot-on solution", "AdministrationRouteId": "Topical use", "PackageTypeId": "Tube", "ManufacturerName": "Bayer Animal Health GmbH", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "4002256914", "RegistrationYear": "2025", "Ingredient": "Emodepside, Praziquantel", "TradeName": "Profender Spot-on for small cats", "Strength": "21.4", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Spot-on solution", "AdministrationRouteId": "Topical use", "PackageTypeId": "Tube", "ManufacturerName": "Bayer Animal Health GmbH", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "4102256915", "RegistrationYear": "2025", "Ingredient": "Emodepside, Praziquantel", "TradeName": "Profender Spot-on for large cats", "Strength": "21.4", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Spot-on solution", "AdministrationRouteId": "Topical use", "PackageTypeId": "Tube", "ManufacturerName": "Bayer Animal Health GmbH", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "4202256916", "RegistrationYear": "2025", "Ingredient": "Praziquantel", "TradeName": "Droncit Tablets 50 mg", "Strength": "50", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Tablet", "AdministrationRouteId": "Oral use", "PackageTypeId": "Blister", "ManufacturerName": "Bayer Animal Health GmbH", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "4302256917", "RegistrationYear": "2025", "Ingredient": "Praziquantel", "TradeName": "Droncit 50 mg/ml solution for injection", "Strength": "56.8", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Intramuscular use", "PackageTypeId": "Vial", "ManufacturerName": "Bayer Animal Health GmbH", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "4402256918", "RegistrationYear": "2025", "Ingredient": "Ivermectin, Praziquantel", "TradeName": "Eqvalan Duo", "Strength": "15.5-77.5", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Oral Paste", "AdministrationRouteId": "Oral use", "PackageTypeId": "Syringe", "ManufacturerName": "Boehringer Ingelheim Animal Health France", "AgentName": "Saudi Import & Export Co. (SAUDIEX)" },
+            { "RegistrationNo": "4502256919", "RegistrationYear": "2025", "Ingredient": "Abamectin", "TradeName": "Equest", "Strength": "1.87", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Oral Paste", "AdministrationRouteId": "Oral use", "PackageTypeId": "Syringe", "ManufacturerName": "Zoetis Belgium S.A.", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "4602256920", "RegistrationYear": "2025", "Ingredient": "Moxidectin, Praziquantel", "TradeName": "Equest Pramox", "Strength": "19.5-121.7", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Oral Paste", "AdministrationRouteId": "Oral use", "PackageTypeId": "Syringe", "ManufacturerName": "Zoetis Belgium S.A.", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "4702256921", "RegistrationYear": "2025", "Ingredient": "Praziquantel", "TradeName": "Droncit Spot-on for cats", "Strength": "20", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Spot-on solution", "AdministrationRouteId": "Topical use", "PackageTypeId": "Tube", "ManufacturerName": "Bayer Animal Health GmbH", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "4802256922", "RegistrationYear": "2025", "Ingredient": "Praziquantel", "TradeName": "Droncit Spot-on for dogs", "Strength": "50", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Spot-on solution", "AdministrationRouteId": "Topical use", "PackageTypeId": "Tube", "ManufacturerName": "Bayer Animal Health GmbH", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "4902256923", "RegistrationYear": "2025", "Ingredient": "Doramectin", "TradeName": "Dectomax 10 mg/ml solution for injection", "Strength": "10", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Subcutaneous and intramuscular use", "PackageTypeId": "Bottle", "ManufacturerName": "Zoetis Belgium S.A.", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "5002256924", "RegistrationYear": "2025", "Ingredient": "Doramectin", "TradeName": "Dectomax 5 mg/ml Pour-on solution", "Strength": "5", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Pour-on solution", "AdministrationRouteId": "Topical use", "PackageTypeId": "Bottle", "ManufacturerName": "Zoetis Belgium S.A.", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "5102256925", "RegistrationYear": "2025", "Ingredient": "Doramectin", "TradeName": "Dectomax 5 mg/ml Pour-on solution", "Strength": "5", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Pour-on solution", "AdministrationRouteId": "Topical use", "PackageTypeId": "Gallon", "ManufacturerName": "Zoetis Belgium S.A.", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "5202256926", "RegistrationYear": "2025", "Ingredient": "Amprolium hydrochloride", "TradeName": "AMPROLIUM-20 S", "Strength": "200", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Jar", "ManufacturerName": "Laboratories Biove", "AgentName": "Fursan Al-Ahram Trading Est." },
+            { "RegistrationNo": "5302256936", "RegistrationYear": "2025", "Ingredient": "Amprolium hydrochloride", "TradeName": "AMPROLIUM-20 S", "Strength": "200", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Sachet", "ManufacturerName": "Laboratories Biove", "AgentName": "Fursan Al-Ahram Trading Est." },
+            { "RegistrationNo": "5402256940", "RegistrationYear": "2025", "Ingredient": "Fenbendazole", "TradeName": "Panacur", "Strength": "100", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Suspension", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": "Intervet International B.V.", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "5502256941", "RegistrationYear": "2025", "Ingredient": "Fenbendazole", "TradeName": "Panacur", "Strength": "100", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Granule", "AdministrationRouteId": "Oral use", "PackageTypeId": "Sachet", "ManufacturerName": "Intervet International B.V.", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "5602256942", "RegistrationYear": "2025", "Ingredient": "Fenbendazole", "TradeName": "Panacur", "Strength": "100", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Tablet", "AdministrationRouteId": "Oral use", "PackageTypeId": "Blister", "ManufacturerName": "Intervet International B.V.", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "5702256943", "RegistrationYear": "2025", "Ingredient": "Fenbendazole", "TradeName": "Panacur", "Strength": "100", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Tablet", "AdministrationRouteId": "Oral use", "PackageTypeId": "Blister", "ManufacturerName": "Intervet International B.V.", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "5802256944", "RegistrationYear": "2025", "Ingredient": "Cefalexin", "TradeName": "Rilexine 75", "Strength": "75", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Tablet", "AdministrationRouteId": "Oral use", "PackageTypeId": "Blister", "ManufacturerName": "Virbac S.A.", "AgentName": "Ghassan O. Jallad Trading Est." },
+            { "RegistrationNo": "5902256945", "RegistrationYear": "2025", "Ingredient": "Cefalexin", "TradeName": "Rilexine 300", "Strength": "300", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Tablet", "AdministrationRouteId": "Oral use", "PackageTypeId": "Blister", "ManufacturerName": "Virbac S.A.", "AgentName": "Ghassan O. Jallad Trading Est." },
+            { "RegistrationNo": "6002256946", "RegistrationYear": "2025", "Ingredient": "Cefalexin", "TradeName": "Rilexine 600", "Strength": "600", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Tablet", "AdministrationRouteId": "Oral use", "PackageTypeId": "Blister", "ManufacturerName": "Virbac S.A.", "AgentName": "Ghassan O. Jallad Trading Est." },
+            { "RegistrationNo": "6102256947", "RegistrationYear": "2025", "Ingredient": "Cefalexin", "TradeName": "Rilexine 750", "Strength": "750", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Tablet", "AdministrationRouteId": "Oral use", "PackageTypeId": "Blister", "ManufacturerName": "Virbac S.A.", "AgentName": "Ghassan O. Jallad Trading Est." },
+            { "RegistrationNo": "6202256948", "RegistrationYear": "2025", "Ingredient": "Cefalexin", "TradeName": "Rilexine 1000", "Strength": "1000", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Tablet", "AdministrationRouteId": "Oral use", "PackageTypeId": "Blister", "ManufacturerName": "Virbac S.A.", "AgentName": "Ghassan O. Jallad Trading Est." },
+            { "RegistrationNo": "6302256949", "RegistrationYear": "2025", "Ingredient": "Ivermectin", "TradeName": "Ivomec", "Strength": "10", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Bottle", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "6402256950", "RegistrationYear": "2025", "Ingredient": "Ivermectin", "TradeName": "Ivomec", "Strength": "10", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Bottle", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "6502256951", "RegistrationYear": "2025", "Ingredient": "Ivermectin", "TradeName": "Ivomec Super", "Strength": "10-100", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Bottle", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "6602256952", "RegistrationYear": "2025", "Ingredient": "Ivermectin", "TradeName": "Ivomec F", "Strength": "10-125", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Bottle", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "6702256953", "RegistrationYear": "2025", "Ingredient": "Ivermectin", "TradeName": "Ivomec F", "Strength": "10-125", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Gallon", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "6802256954", "RegistrationYear": "2025", "Ingredient": "Ivermectin", "TradeName": "Ivomec Pour-on", "Strength": "5", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Pour-on solution", "AdministrationRouteId": "Topical use", "PackageTypeId": "Bottle", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "6902256955", "RegistrationYear": "2025", "Ingredient": "Ivermectin", "TradeName": "Ivomec Pour-on", "Strength": "5", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Pour-on solution", "AdministrationRouteId": "Topical use", "PackageTypeId": "Gallon", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "7002256956", "RegistrationYear": "2025", "Ingredient": "Ivermectin", "TradeName": "Ivomec Plus", "Strength": "10-100", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Bottle", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "7102256957", "RegistrationYear": "2025", "Ingredient": "Ivermectin", "TradeName": "Ivomec Plus", "Strength": "10-100", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Gallon", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "7202256958", "RegistrationYear": "2025", "Ingredient": "Ivermectin", "TradeName": "Ivomec Gold", "Strength": "10-250", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Bottle", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "7302256959", "RegistrationYear": "2025", "Ingredient": "Ivermectin", "TradeName": "Ivomec Gold", "Strength": "10-250", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Gallon", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "7402256960", "RegistrationYear": "2025", "Ingredient": "Ivermectin", "TradeName": "Ivomec 1% Injection", "Strength": "10", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Bottle", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "7502256961", "RegistrationYear": "2025", "Ingredient": "Ivermectin", "TradeName": "Ivomec 1% Injection", "Strength": "10", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Gallon", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "7602256962", "RegistrationYear": "2025", "Ingredient": "Flunixin", "TradeName": "Flunix", "Strength": "50", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Intravenous and intramuscular use", "PackageTypeId": "Bottle", "ManufacturerName": "Norbrook Laboratories", "AgentName": "Desert Hills Veterinary services" },
+            { "RegistrationNo": "7702256963", "RegistrationYear": "2025", "Ingredient": "Flunixin", "TradeName": "Flunixin", "Strength": "50", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Intravenous and intramuscular use", "PackageTypeId": "Bottle", "ManufacturerName": "Norbrook Laboratories", "AgentName": "Desert Hills Veterinary services" },
+            { "RegistrationNo": "7802256964", "RegistrationYear": "2025", "Ingredient": "Ivermectin", "TradeName": "Ivermectin", "Strength": "10", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Bottle", "ManufacturerName": "Norbrook Laboratories", "AgentName": "Desert Hills Veterinary services" },
+            { "RegistrationNo": "7902256965", "RegistrationYear": "2025", "Ingredient": "Toltrazuril", "TradeName": "Toltrazuril 2.5% Oral solution", "Strength": "25", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": "Norbrook Laboratories", "AgentName": "Desert Hills Veterinary services" },
+            { "RegistrationNo": "8002256966", "RegistrationYear": "2025", "Ingredient": "Diclazuril", "TradeName": "Vecoxan 2.5 mg/ml oral suspension", "Strength": "2.5", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral suspension", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": "Janssen Pharmaceutica NV", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "8102256967", "RegistrationYear": "2025", "Ingredient": "Diclazuril", "TradeName": "Vecoxan 2.5 mg/ml oral suspension", "Strength": "2.5", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral suspension", "AdministrationRouteId": "Oral use", "PackageTypeId": "Gallon", "ManufacturerName": "Janssen Pharmaceutica NV", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "8202256968", "RegistrationYear": "2025", "Ingredient": "Moxidectin", "TradeName": "Cydectin 0.1% Pour-on solution", "Strength": "1", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Pour-on solution", "AdministrationRouteId": "Topical use", "PackageTypeId": "Bottle", "ManufacturerName": "Zoetis Belgium S.A.", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "8302256969", "RegistrationYear": "2025", "Ingredient": "Moxidectin", "TradeName": "Cydectin 0.1% Pour-on solution", "Strength": "1", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Pour-on solution", "AdministrationRouteId": "Topical use", "PackageTypeId": "Gallon", "ManufacturerName": "Zoetis Belgium S.A.", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "8402256970", "RegistrationYear": "2025", "Ingredient": "Eprinomectin", "TradeName": "Eprinex Pour-on", "Strength": "5", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Pour-on solution", "AdministrationRouteId": "Topical use", "PackageTypeId": "Bottle", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "8502256971", "RegistrationYear": "2025", "Ingredient": "Eprinomectin", "TradeName": "Eprinex Pour-on", "Strength": "5", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Pour-on solution", "AdministrationRouteId": "Topical use", "PackageTypeId": "Gallon", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "8602256972", "RegistrationYear": "2025", "Ingredient": "Doxycycline hyclate", "TradeName": "Doxyvet-500", "Strength": "500", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Jar", "ManufacturerName": ".Interchemie Werken 'De Adelaar' Eesti AS", "AgentName": "Mohamed Ahmed Binzahaba Al-Ghamdi Store" },
+            { "RegistrationNo": "8702256973", "RegistrationYear": "2025", "Ingredient": "Doxycycline hyclate", "TradeName": "Doxyvet-500", "Strength": "500", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bag", "ManufacturerName": ".Interchemie Werken 'De Adelaar' Eesti AS", "AgentName": "Mohamed Ahmed Binzahaba Al-Ghamdi Store" },
+            { "RegistrationNo": "8802256974", "RegistrationYear": "2025", "Ingredient": "Doxycycline hyclate", "TradeName": "Doxyvet-500", "Strength": "500", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Sachet", "ManufacturerName": ".Interchemie Werken 'De Adelaar' Eesti AS", "AgentName": "Mohamed Ahmed Binzahaba Al-Ghamdi Store" },
+            { "RegistrationNo": "8902256975", "RegistrationYear": "2025", "Ingredient": "Doxycycline hyclate", "TradeName": "Doxyvet-500", "Strength": "500", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Powder for oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Gallon", "ManufacturerName": ".Interchemie Werken 'De Adelaar' Eesti AS", "AgentName": "Mohamed Ahmed Binzahaba Al-Ghamdi Store" },
+            { "RegistrationNo": "9002256976", "RegistrationYear": "2025", "Ingredient": "Ivermectin", "TradeName": "Ivomec Pour-on", "Strength": "5", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Pour-on solution", "AdministrationRouteId": "Topical use", "PackageTypeId": "Gallon", "ManufacturerName": "Merial", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "9102256977", "RegistrationYear": "2025", "Ingredient": "Tilmicosin", "TradeName": "Pulmotil", "Strength": "250", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": "Elanco Animal Health", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "9202256978", "RegistrationYear": "2025", "Ingredient": "Tilmicosin", "TradeName": "Pulmotil", "Strength": "250", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Gallon", "ManufacturerName": "Elanco Animal Health", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "9302256979", "RegistrationYear": "2025", "Ingredient": "Florfenicol", "TradeName": "Aquaflor 500 mg/g Premix for Medicated feeding stuff", "Strength": "500", "StrengthUnitId": "mg/g", "PharmaceuticalFormId": "Premix for medicated feeding stuff", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bag", "ManufacturerName": "Elanco Animal Health", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "9402256980", "RegistrationYear": "2025", "Ingredient": "Florfenicol", "TradeName": "Florfenicol 20% Oral Solution", "Strength": "200", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": "Zoetis Suzhou Manufacturing Co. Ltd.", "AgentName": "Desert Hills Veterinary services" },
+            { "RegistrationNo": "9502256981", "RegistrationYear": "2025", "Ingredient": "Florfenicol", "TradeName": "Florfenicol 20% Oral Solution", "Strength": "200", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": "Zoetis Suzhou Manufacturing Co. Ltd.", "AgentName": "Desert Hills Veterinary services" },
+            { "RegistrationNo": "7240066017701", "RegistrationYear": "", "Ingredient": "Avian Infectious Bronchitis Virus Strain L1148", "TradeName": "Poulvac IB QX", "Strength": "10.5", "StrengthUnitId": "EID50/dose", "PharmaceuticalFormId": "Lyophilisate for suspension", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Vial", "ManufacturerName": "Zoetis/ Pfizer Animal Health", "AgentName": "Alemar International for Agrochemical & Veterinary" },
+            { "RegistrationNo": "7240066017702", "RegistrationYear": "", "Ingredient": "Avian Infectious Bronchitis Virus Strain L1148", "TradeName": "Poulvac IB QX", "Strength": "10.5", "StrengthUnitId": "EID50/dose", "PharmaceuticalFormId": "Lyophilisate for suspension", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Vial", "ManufacturerName": "Zoetis/ Pfizer Animal Health", "AgentName": "Alemar International for Agrochemical & Veterinary" },
+            { "RegistrationNo": "2605222069", "RegistrationYear": "", "Ingredient": "Chlorpheniramine Maleate", "TradeName": "Chlorazin", "Strength": "10", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Vial", "ManufacturerName": "Zydus Animal Health and Investments Limited", "AgentName": "Rekaz Veterinary Company" },
+            { "RegistrationNo": "2605222069", "RegistrationYear": "", "Ingredient": "Chlorpheniramine Maleate", "TradeName": "Chlorazin", "Strength": "10", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Solution for injection", "AdministrationRouteId": "Subcutaneous use", "PackageTypeId": "Vial", "ManufacturerName": "Zydus Animal Health and Investments Limited", "AgentName": "Rekaz Veterinary Company" },
+            { "RegistrationNo": "1905222067", "RegistrationYear": "", "Ingredient": "Tilmicosin", "TradeName": "Pulmotil", "Strength": "250", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Gallon", "ManufacturerName": "Elanco Animal Health", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "1905222067", "RegistrationYear": "", "Ingredient": "Tilmicosin", "TradeName": "Pulmotil", "Strength": "250", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Gallon", "ManufacturerName": "Elanco Animal Health", "AgentName": "Arabco Trading Co. Ltd." },
+            { "RegistrationNo": "1805222066", "RegistrationYear": "", "Ingredient": "Florfenicol", "TradeName": "Florfenicol 20% Oral Solution", "Strength": "200", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": "Zoetis Suzhou Manufacturing Co. Ltd.", "AgentName": "Desert Hills Veterinary services" },
+            { "RegistrationNo": "1805222066", "RegistrationYear": "", "Ingredient": "Florfenicol", "TradeName": "Florfenicol 20% Oral Solution", "Strength": "200", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": "Zoetis Suzhou Manufacturing Co. Ltd.", "AgentName": "Desert Hills Veterinary services" },
+            { "RegistrationNo": "1705222065", "RegistrationYear": "", "Ingredient": "Tiludronate", "TradeName": "Tildren 500mg/5ml", "Strength": "500", "StrengthUnitId": "mg/5ml", "PharmaceuticalFormId": "Lyophilisate and solvent for solution for injection", "AdministrationRouteId": "Intravenous use", "PackageTypeId": "Box", "ManufacturerName": "Ceva Santé Animale", "AgentName": "National Center for Veterinary Medicine" },
+            { "RegistrationNo": "1705222065", "RegistrationYear": "", "Ingredient": "Tiludronate", "TradeName": "Tildren 500mg/5ml", "Strength": "500", "StrengthUnitId": "mg/5ml", "PharmaceuticalFormId": "Lyophilisate and solvent for solution for injection", "AdministrationRouteId": "Intravenous use", "PackageTypeId": "Box", "ManufacturerName": "Ceva Santé Animale", "AgentName": "National Center for Veterinary Medicine" },
+            { "RegistrationNo": "1605222064", "RegistrationYear": "", "Ingredient": "Tiludronate", "TradeName": "Tildren 50mg", "Strength": "50", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Lyophilisate for solution for injection", "AdministrationRouteId": "Intravenous use", "PackageTypeId": "Vial", "ManufacturerName": "Ceva Santé Animale", "AgentName": "National Center for Veterinary Medicine" },
+            { "RegistrationNo": "1605222064", "RegistrationYear": "", "Ingredient": "Tiludronate", "TradeName": "Tildren 50mg", "Strength": "50", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Lyophilisate for solution for injection", "AdministrationRouteId": "Intravenous use", "PackageTypeId": "Vial", "ManufacturerName": "Ceva Santé Animale", "AgentName": "National Center for Veterinary Medicine" },
+            { "RegistrationNo": "1505222063", "RegistrationYear": "", "Ingredient": "Toltrazuril", "TradeName": "Coxigone", "Strength": "25", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": "Ceva Santé Animale", "AgentName": "National Center for Veterinary Medicine" },
+            { "RegistrationNo": "1505222063", "RegistrationYear": "", "Ingredient": "Toltrazuril", "TradeName": "Coxigone", "Strength": "25", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": "Ceva Santé Animale", "AgentName": "National Center for Veterinary Medicine" },
+            { "RegistrationNo": "1405222062", "RegistrationYear": "", "Ingredient": "Toltrazuril", "TradeName": "Coxigone", "Strength": "25", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Jar", "ManufacturerName": "Ceva Santé Animale", "AgentName": "National Center for Veterinary Medicine" },
+            { "RegistrationNo": "1405222062", "RegistrationYear": "", "Ingredient": "Toltrazuril", "TradeName": "Coxigone", "Strength": "25", "StrengthUnitId": "mg/ml", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Jar", "ManufacturerName": "Ceva Santé Animale", "AgentName": "National Center for Veterinary Medicine" },
+            { "RegistrationNo": "1305222061", "RegistrationYear": "", "Ingredient": "Avermectin, Ivermectin, Tilmicosin", "TradeName": "AVEMICOSIN", "Strength": "250", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": "Avemicosin Company", "AgentName": "Al-Awael Veterinary Pharmaceutics Co." },
+            { "RegistrationNo": "1305222061", "RegistrationYear": "", "Ingredient": "Avermectin, Ivermectin, Tilmicosin", "TradeName": "AVEMICOSIN", "Strength": "250", "StrengthUnitId": "mg", "PharmaceuticalFormId": "Oral solution", "AdministrationRouteId": "Oral use", "PackageTypeId": "Bottle", "ManufacturerName": "Avemicosin Company", "AgentName": "Al-Awael Veterinary Pharmaceutics Co." }
+        ];
+
+        const tableBody = document.getElementById('data-table-body');
+        const filterInputs = document.querySelectorAll('.filter-input');
+        const routeDropdown = document.getElementById('filter-AdministrationRouteId');
+        const packageDropdown = document.getElementById('filter-PackageTypeId');
+
+        // Find unique values for dropdowns
+        const routes = [...new Set(data.map(item => item.AdministrationRouteId))].sort();
+        const packages = [...new Set(data.map(item => item.PackageTypeId))].sort();
+
+        // Populate dropdowns
+        routes.forEach(route => {
+            const option = document.createElement('option');
+            option.value = route;
+            option.textContent = route;
+            routeDropdown.appendChild(option);
+        });
+
+        packages.forEach(pkg => {
+            const option = document.createElement('option');
+            option.value = pkg;
+            option.textContent = pkg;
+            packageDropdown.appendChild(option);
+        });
+
+        const renderTable = (filteredData) => {
+            tableBody.innerHTML = '';
+            filteredData.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'rounded-md shadow-sm mb-2';
+
+                row.innerHTML = `
+                    <td class="py-3 px-4 rounded-l-lg">${item.RegistrationYear}</td>
+                    <td class="py-3 px-4 long-text">${item.Ingredient}</td>
+                    <td class="py-3 px-4 long-text">${item.TradeName}</td>
+                    <td class="py-3 px-4 long-text">${item.Strength}</td>
+                    <td class="py-3 px-4">${item.StrengthUnitId}</td>
+                    <td class="py-3 px-4 long-text">${item.PharmaceuticalFormId}</td>
+                    <td class="py-3 px-4">${item.AdministrationRouteId}</td>
+                    <td class="py-3 px-4">${item.PackageTypeId}</td>
+                    <td class="py-3 px-4 long-text">${item.ManufacturerName}</td>
+                    <td class="py-3 px-4 rounded-r-lg long-text">${item.AgentName}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        };
+
+        const filterTable = () => {
+            const filters = {
+                'RegistrationYear': document.getElementById('filter-RegistrationYear').value.toLowerCase(),
+                'Ingredient': document.getElementById('filter-Ingredient').value.toLowerCase(),
+                'TradeName': document.getElementById('filter-TradeName').value.toLowerCase(),
+                'Strength': document.getElementById('filter-Strength').value.toLowerCase(),
+                'StrengthUnitId': document.getElementById('filter-StrengthUnitId').value.toLowerCase(),
+                'PharmaceuticalFormId': document.getElementById('filter-PharmaceuticalFormId').value.toLowerCase(),
+                'AdministrationRouteId': document.getElementById('filter-AdministrationRouteId').value,
+                'PackageTypeId': document.getElementById('filter-PackageTypeId').value,
+                'ManufacturerName': document.getElementById('filter-ManufacturerName').value.toLowerCase(),
+                'AgentName': document.getElementById('filter-AgentName').value.toLowerCase(),
+            };
+
+            const filteredData = data.filter(item => {
+                // Check each text field filter
+                for (const key in filters) {
+                    if (filters[key] !== '' && typeof item[key] === 'string') {
+                        if (!item[key].toLowerCase().includes(filters[key])) {
+                            return false;
+                        }
+                    } else if (filters[key] !== '' && typeof item[key] !== 'string') {
+                        // For numerical fields, convert to string for search
+                        if (!String(item[key]).toLowerCase().includes(filters[key])) {
+                            return false;
+                        }
+                    }
+                }
+                
+                // Check dropdown filters separately
+                if (filters.AdministrationRouteId !== '' && item.AdministrationRouteId !== filters.AdministrationRouteId) {
+                    return false;
+                }
+                if (filters.PackageTypeId !== '' && item.PackageTypeId !== filters.PackageTypeId) {
+                    return false;
+                }
+                
+                return true;
+            });
+            renderTable(filteredData);
+        };
+
+        filterInputs.forEach(input => {
+            input.addEventListener('input', filterTable);
+            input.addEventListener('change', filterTable);
+        });
+
+        // Initial render of the table
+        renderTable(data);
+    });
+</script>
+
+</body>
+</html>
